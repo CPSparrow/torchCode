@@ -1,8 +1,7 @@
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from sympy import false
+import numpy as np
 
 batch_size = 2
 
@@ -15,7 +14,7 @@ max_tgt_word_nums = 8
 # embedding 的维度
 model_dim = 8
 
-torch_test = false
+torch_test = False
 if torch_test:
     src_len = torch.randint(2, 5, (batch_size,))
     tgt_len = torch.randint(2, 5, (batch_size,))
@@ -63,6 +62,18 @@ tgt_pos = torch.cat([torch.unsqueeze(torch.arange(max_tgt_len), 0) for _ in tgt_
 src_pos_embedding = pos_embedding(src_pos)
 tgt_pos_embedding = pos_embedding(tgt_pos)
 
-# print(repr(src_embedding_table.weight))
-print(repr(src_pos_embedding))
-print(repr(tgt_pos_embedding))
+# 构造encoder的self-attention mask
+# mask 的shape:[batch_size, max_src_len, max_src_len],值为1或-inf
+valid_encoder_pos = torch.unsqueeze(
+    torch.cat([torch.unsqueeze(F.pad(torch.ones(L), (0, max_src_len - L)), 0) for L in src_len]), 2)
+valid_encoder_pos_matrix = torch.bmm(valid_encoder_pos, valid_encoder_pos.transpose(1, 2))
+invalid_encoder_pos_matrix = 1 - valid_encoder_pos_matrix
+mask_self_attention = invalid_encoder_pos_matrix.to(torch.bool)
+
+# 按理来说这里的score应当是与之前得到的word embedding 或者position embedding有关的一个矩阵。
+# 目前还不清楚为何要使用随机生成的这个score。
+score = torch.randn(batch_size, max_src_len, max_src_len)
+
+masked_score = score.masked_fill(mask=mask_self_attention, value=-1e9)
+prob = F.softmax(masked_score, dim=-1)
+print(score, "\n", prob)
