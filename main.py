@@ -84,16 +84,22 @@ prob = F.softmax(masked_score, dim=-1)
 
 # Step5: 构造intro_attention的mask
 # Q @ K^T shape: [batch_size, max_tgt_len, max_src_len]
-
-# just like valid_encoder_pos
 valid_decoder_pos = torch.unsqueeze(
     torch.cat([torch.unsqueeze(F.pad(torch.ones(L), (0, max_tgt_len - L)), 0) for L in tgt_len]), 2)
 valid_cross_pos_matrix = torch.bmm(valid_decoder_pos, valid_encoder_pos.transpose(1, 2))
 invalid_cross_pos_matrix = 1 - valid_cross_pos_matrix
 mask_cross_attention = invalid_cross_pos_matrix.to(torch.bool)
-
 # 在这之后要做的事情和前面差不多,mask_fill一下用于完成，代码就不写了
 
 # Step6: 构造decoder self-attention的mask
-valid_tri_matrix = [F.pad(torch.tril(torch.ones(L, L)), (0, (max_tgt_len - L), 0, (max_tgt_len - L))) for L in tgt_len]
-print("{0}".format(valid_tri_matrix))
+valid_tri_matrix = torch.cat(
+    [torch.unsqueeze(
+        F.pad(torch.tril(torch.ones(L, L)), (0, (max_tgt_len - L), 0, (max_tgt_len - L))), 0)
+        for L in tgt_len])
+invalid_tri_matrix = 1 - valid_tri_matrix
+invalid_tri_matrix = invalid_tri_matrix.to(torch.bool)
+# 这里再次用随机生成的的score来模拟要被mask的数据
+score = torch.randn(batch_size, max_tgt_len, max_tgt_len)
+masked_score = score.masked_fill(mask=invalid_tri_matrix, value=-1e9)
+prob = F.softmax(masked_score, dim=-1)
+print("{0}\n{1}\n{2}".format(invalid_tri_matrix, masked_score, prob))
