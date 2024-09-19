@@ -2,10 +2,10 @@
 
 - [x] transformer 的LayerNorm
 - [x] Q K V的形状问题 (ok)
-- [ ] 什么是drop_out,以及drop out的实现方式
-- [ ] perplexity是怎么计算的
+- [x] 什么是drop_out,以及drop out的实现方式
+- [ ] Teacher Forcing的细节(?)
+- [x] perplexity是怎么计算的
 - [ ] BytePairEncoding(BPE)的理解
-- [ ] Teacher Forcing的细节
 
 ## 问题
 
