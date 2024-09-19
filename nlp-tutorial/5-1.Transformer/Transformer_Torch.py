@@ -307,60 +307,61 @@ class Transformer(nn.Module):
         return dec_logits.view(-1, dec_logits.size(-1)), enc_self_attns, dec_self_attns, dec_enc_attns
 
 
-model = Transformer().cuda()
-criterion = nn.CrossEntropyLoss(ignore_index=0)
-optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.99)
+if __name__ == "__main__":
+    model = Transformer().cuda()
+    criterion = nn.CrossEntropyLoss(ignore_index=0)
+    optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.99)
 
-for epoch in range(1000):
-    for enc_inputs, dec_inputs, dec_outputs in loader:
-        '''
-        enc_inputs: [batch_size, src_len]
-        dec_inputs: [batch_size, tgt_len]
-        dec_outputs: [batch_size, tgt_len]
-        '''
-        enc_inputs, dec_inputs, dec_outputs = enc_inputs.cuda(), dec_inputs.cuda(), dec_outputs.cuda()
-        # outputs: [batch_size * tgt_len, tgt_vocab_size]
-        outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(enc_inputs, dec_inputs)
-        loss = criterion(outputs, dec_outputs.view(-1))
-        if epoch % 100 == 0:
-            print('Epoch:', '%04d' % (epoch + 1), 'loss =', '{:.6f}'.format(loss))
+    for epoch in range(200):
+        for enc_inputs, dec_inputs, dec_outputs in loader:
+            '''
+            enc_inputs: [batch_size, src_len]
+            dec_inputs: [batch_size, tgt_len]
+            dec_outputs: [batch_size, tgt_len]
+            '''
+            enc_inputs, dec_inputs, dec_outputs = enc_inputs.cuda(), dec_inputs.cuda(), dec_outputs.cuda()
+            # outputs: [batch_size * tgt_len, tgt_vocab_size]
+            outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(enc_inputs, dec_inputs)
+            loss = criterion(outputs, dec_outputs.view(-1))
+            if epoch % 100 == 0:
+                print('Epoch:', '%04d' % (epoch + 1), 'loss =', '{:.6f}'.format(loss))
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-
-def greedy_decoder(model, enc_input, start_symbol):
-    """
-    为了简单起见,当K=1时,贪婪解码器是波束搜索。这对于推理是必要的,因为我们不知道
-    目标序列输入。因此,我们尝试逐字生成目标输入，然后将其输入到转换器中。 
-    param model:变压器模型
-    param enc_input:编码器输入   
-    param start_symbol:开始符号。在本例中,它是“S”,对应于索引4
-    return:目标输入
-    """
-    enc_outputs, enc_self_attns = model.encoder(enc_input)
-    dec_input = torch.zeros(1, 0).type_as(enc_input.data)
-    terminal = False
-    next_symbol = start_symbol
-    while not terminal:
-        dec_input = torch.cat([dec_input.detach(), torch.tensor([[next_symbol]], dtype=enc_input.dtype).cuda()], -1)
-        dec_outputs, _, _ = model.decoder(dec_input, enc_input, enc_outputs)
-        projected = model.projection(dec_outputs)
-        prob = projected.squeeze(0).max(dim=-1, keepdim=False)[1]
-        next_word = prob.data[-1]
-        next_symbol = next_word
-        if next_symbol == tgt_vocab["."]:
-            terminal = True
-        print(next_word)
-    return dec_input
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
 
-# 测试
-enc_inputs, _, _ = next(iter(loader))
-enc_inputs = enc_inputs.cuda()
-for i in range(len(enc_inputs)):
-    greedy_dec_input = greedy_decoder(model, enc_inputs[i].view(1, -1), start_symbol=tgt_vocab["S"])
-    predict, _, _, _ = model(enc_inputs[i].view(1, -1), greedy_dec_input)
-    predict = predict.data.max(1, keepdim=True)[1]
-    print(enc_inputs[i], '->', [idx2word[n.item()] for n in predict.squeeze()])
+    def greedy_decoder(model, enc_input, start_symbol):
+        """
+        为了简单起见,当K=1时,贪婪解码器是波束搜索。这对于推理是必要的,因为我们不知道
+        目标序列输入。因此,我们尝试逐字生成目标输入，然后将其输入到转换器中。
+        param model:变压器模型
+        param enc_input:编码器输入
+        param start_symbol:开始符号。在本例中,它是“S”,对应于索引4
+        return:目标输入
+        """
+        enc_outputs, enc_self_attns = model.encoder(enc_input)
+        dec_input = torch.zeros(1, 0).type_as(enc_input.data)
+        terminal = False
+        next_symbol = start_symbol
+        while not terminal:
+            dec_input = torch.cat([dec_input.detach(), torch.tensor([[next_symbol]], dtype=enc_input.dtype).cuda()], -1)
+            dec_outputs, _, _ = model.decoder(dec_input, enc_input, enc_outputs)
+            projected = model.projection(dec_outputs)
+            prob = projected.squeeze(0).max(dim=-1, keepdim=False)[1]
+            next_word = prob.data[-1]
+            next_symbol = next_word
+            if next_symbol == tgt_vocab["."]:
+                terminal = True
+            print(next_word)
+        return dec_input
+
+
+    # 测试
+    enc_inputs, _, _ = next(iter(loader))
+    enc_inputs = enc_inputs.cuda()
+    for i in range(len(enc_inputs)):
+        greedy_dec_input = greedy_decoder(model, enc_inputs[i].view(1, -1), start_symbol=tgt_vocab["S"])
+        predict, _, _, _ = model(enc_inputs[i].view(1, -1), greedy_dec_input)
+        predict = predict.data.max(1, keepdim=True)[1]
+        print(enc_inputs[i], '->', [idx2word[n.item()] for n in predict.squeeze()])
