@@ -1,12 +1,20 @@
-## TODO
+# 知识点
 
-- [x] transformer 的LayerNorm
-- [x] Q K V的形状问题 (ok)
-- [x] 什么是drop_out,以及drop out的实现方式
-- [ ] Teacher Forcing的细节(?)
-- [x] perplexity是怎么计算的
-- [ ] BytePairEncoding(BPE)的理解
+- [ ] ```optim.SGD(..., momentum=0.99)```后一个参数怎么理解
+- [ ] ```dataloader```的参数的含义
+- [ ] ```LongTensor```的作用
+- [ ] ```position_encoding```的```forward```
+- [ ] 根据这里的代码中的dec_inputs和dec_ouputs,是否就是资料中所提到的teacher forcing?
+- [ ] ```model(enc_inputs, dec_inputs)```为什么可以不调用```forward```?
+- [ ] 在这个代码示例里面，word embedding是不包含语义信息的吗？
 
-## 问题
+# 运行
 
-- 网址 https://zhuanlan.zhihu.com/p/492803886 中给出的```torch.ones()```的实例无法正确运行
+- [ ] 多次运行该代码会改变结果吗？
+- [ ] ```register_buffer()```
+- [ ] 查看```make_data()```的返回值的形状
+- [ ] 尝试修改代码，计算训练时的perplexity
+- [ ] ```MyDataSet```相关的代码可以优化
+
+# 笔记
+
