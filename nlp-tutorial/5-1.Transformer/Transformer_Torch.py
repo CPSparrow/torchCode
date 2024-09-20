@@ -35,7 +35,7 @@ tgt_len = 6  # dec_input(=dec_output) 最大句长
 d_model = 512  # Embedding Size 嵌入层
 d_ff = 2048  # FeedForward dimension 残差神经网络层
 d_k = d_v = 64  # dimension of K(=Q), V
-n_layers = 6  # number of Encoder of Decoder Layer
+n_layers = 6  # number of Encoder and Decoder Layer
 n_heads = 8  # number of heads in Multi-Head Attention 多头自注意
 
 
@@ -46,12 +46,15 @@ def make_data(sentences):
         dec_input = [[tgt_vocab[n] for n in sentences[i][1].split()]]  # [[6, 1, 2, 3, 4, 8], [6, 1, 2, 3, 5, 8]]
         dec_output = [[tgt_vocab[n] for n in sentences[i][2].split()]]  # [[1, 2, 3, 4, 8, 7], [1, 2, 3, 5, 8, 7]]
 
-        enc_inputs.extend(enc_input)  # 这里不清楚为什么需要extend()
+        # 这里extend()的作用：把input列表添加到inputs里面
+        enc_inputs.extend(enc_input)
         dec_inputs.extend(dec_input)
         dec_outputs.extend(dec_output)
 
+    # 注意这里需要是LongTensor
+    # 默认Tensor得到32位浮点,LongTensor是得到64位长整数.
     return torch.LongTensor(enc_inputs), torch.LongTensor(dec_inputs), torch.LongTensor(
-        dec_outputs)  # 注意这里需要是LongTensor
+        dec_outputs)
 
 
 enc_inputs, dec_inputs, dec_outputs = make_data(sentences)
@@ -80,11 +83,14 @@ class PositionalEncoding(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
         pe = torch.zeros(max_len, d_model)
+        # 列矩阵,对应pos,unsqueeze起到了reshape的作用
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        # 行矩阵,对应i
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0).transpose(0, 1)
+        # 如果没有下面这句话会怎么样？可以尝试一下
         self.register_buffer('pe', pe)
 
     def forward(self, x):
@@ -335,8 +341,8 @@ if __name__ == "__main__":
         """
         为了简单起见,当K=1时,贪婪解码器是波束搜索。这对于推理是必要的,因为我们不知道
         目标序列输入。因此,我们尝试逐字生成目标输入，然后将其输入到转换器中。
-        param model:变压器模型
-        param enc_input:编码器输入
+        param model:tansformer model
+        param enc_input:encoder输入
         param start_symbol:开始符号。在本例中,它是“S”,对应于索引4
         return:目标输入
         """
