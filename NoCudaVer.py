@@ -329,8 +329,8 @@ if __name__ == "__main__":
             # outputs: [batch_size * tgt_len, tgt_vocab_size]
             outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(enc_inputs, dec_inputs)
             loss = criterion(outputs, dec_outputs.view(-1))
-            if epoch % 100 == 0:
-                print('Epoch:', '%04d' % (epoch + 1), 'loss =', '{:.6f}'.format(loss))
+            if epoch % 10 == 0 or True:
+                print('Epoch:', '%04d' % (epoch), 'loss =', '{:.6f}'.format(loss))
 
             optimizer.zero_grad()
             loss.backward()
@@ -350,7 +350,9 @@ if __name__ == "__main__":
         dec_input = torch.zeros(1, 0).type_as(enc_input.data)
         terminal = False
         next_symbol = start_symbol
-        while not terminal:
+        cnt = 0
+        while not terminal and cnt <= tgt_len:
+            cnt += 1
             dec_input = torch.cat([dec_input.detach(), torch.tensor([[next_symbol]], dtype=enc_input.dtype)], -1)
             dec_outputs, _, _ = model.decoder(dec_input, enc_input, enc_outputs)
             projected = model.projection(dec_outputs)
@@ -359,7 +361,7 @@ if __name__ == "__main__":
             next_symbol = next_word
             if next_symbol == tgt_vocab["."]:
                 terminal = True
-            print(next_word)
+            # print(next_word)
         return dec_input
 
 
@@ -370,4 +372,6 @@ if __name__ == "__main__":
         greedy_dec_input = greedy_decoder(model, enc_inputs[i].view(1, -1), start_symbol=tgt_vocab["S"])
         predict, _, _, _ = model(enc_inputs[i].view(1, -1), greedy_dec_input)
         predict = predict.data.max(1, keepdim=True)[1]
-        print(enc_inputs[i], '->', [idx2word[n.item()] for n in predict.squeeze()])
+        # print(enc_inputs[i], '->', [idx2word[n.item()] for n in predict.squeeze()])
+        print('', [idx2word[n.item()] for n in enc_inputs[i].squeeze()]
+              , '->\n', [idx2word[n.item()] for n in predict.squeeze()])
