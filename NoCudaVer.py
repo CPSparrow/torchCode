@@ -14,6 +14,7 @@ import torch.utils.data as Data
 # E：显示解码输出开始的符号
 # P：如果当前批次数据大小短于时间步长，则将填充空白序列的符号
 
+# 注意到这里的sentence都已经做好padding了
 sentences = [
     # enc_input           dec_input         dec_output
     ['ich mochte ein bier P', 'S i want a beer .', 'i want a beer . E'],
@@ -39,8 +40,23 @@ d_k = d_v = 64  # dimension of K(=Q), V
 n_layers = 6  # number of Encoder and Decoder Layer
 n_heads = 8  # number of heads in Multi-Head Attention 多头自注意
 
+# 设置batch_size,可能还有地方遗漏
+batch_size = 2
+
 
 def make_data(sentences):
+    r"""
+    把文本转化成对应的序列(对应词表中的idx)
+
+    :class:`return` :
+
+    ([len(sentences),src_len],
+
+    [len(sentences),tgt_len],
+
+    [len(sentences),tgt_len])
+    """
+
     enc_inputs, dec_inputs, dec_outputs = [], [], []
     for i in range(len(sentences)):
         enc_input = [[src_vocab[n] for n in sentences[i][0].split()]]  # [[1, 2, 3, 4, 0], [1, 2, 3, 5, 0]]
@@ -75,7 +91,8 @@ class MyDataSet(Data.Dataset):
         return self.enc_inputs[idx], self.dec_inputs[idx], self.dec_outputs[idx]
 
 
-loader = Data.DataLoader(MyDataSet(enc_inputs, dec_inputs, dec_outputs), 2, True)
+# 还有一个参数num_workers表明运行是时的线程数，对于大的数据集可以提高效率
+loader = Data.DataLoader(MyDataSet(enc_inputs, dec_inputs, dec_outputs), batch_size, True)
 
 
 class PositionalEncoding(nn.Module):
@@ -321,7 +338,7 @@ if __name__ == "__main__":
 
     print("Training...")
     loss = 0.0
-    for epoch in range(1, 20):
+    for epoch in range(1, 10):
         for enc_inputs, dec_inputs, dec_outputs in loader:
             """
             enc_inputs: [batch_size, src_len]
