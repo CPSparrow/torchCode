@@ -14,12 +14,11 @@ import torch.utils.data as Data
 # E：显示解码输出开始的符号
 # P：如果当前批次数据大小短于时间步长，则将填充空白序列的符号
 
-# 注意到这里的sentence都已经做好padding了
 sentences = [
     # enc_input           dec_input         dec_output
     ['ich mochte ein bier P', 'S i want a beer .', 'i want a beer . E'],
     ['ich mochte ein cola P', 'S i want a coke .', 'i want a coke . E']
-]
+]  # 注意到这里的sentence都已经做好padding了
 
 # Padding(填充)的时候填入内容应该是0
 src_vocab = {'P': 0, 'ich': 1, 'mochte': 2, 'ein': 3, 'bier': 4, 'cola': 5}
@@ -63,7 +62,7 @@ def make_data(sentences):
         dec_input = [[tgt_vocab[n] for n in sentences[i][1].split()]]  # [[6, 1, 2, 3, 4, 8], [6, 1, 2, 3, 5, 8]]
         dec_output = [[tgt_vocab[n] for n in sentences[i][2].split()]]  # [[1, 2, 3, 4, 8, 7], [1, 2, 3, 5, 8, 7]]
 
-        # 这里extend()的作用：把input列表添加到inputs里面
+        # 这里extend()的作用：把input列表添加到inputs后面
         enc_inputs.extend(enc_input)
         dec_inputs.extend(dec_input)
         dec_outputs.extend(dec_output)
