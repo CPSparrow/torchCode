@@ -22,6 +22,7 @@ sentences = [
 
 # Padding(填充)的时候填入内容应该是0
 src_vocab = {'P': 0, 'ich': 1, 'mochte': 2, 'ein': 3, 'bier': 4, 'cola': 5}
+idx2src = {i: s for i, s in enumerate(src_vocab)}
 src_vocab_size = len(src_vocab)
 
 tgt_vocab = {'P': 0, 'i': 1, 'want': 2, 'a': 3, 'beer': 4, 'coke': 5, 'S': 6, 'E': 7, '.': 8}
@@ -129,12 +130,12 @@ class ScaledDotProductAttention(nn.Module):
         super(ScaledDotProductAttention, self).__init__()
 
     def forward(self, Q, K, V, attn_mask):
-        '''
+        """
         Q: [batch_size, n_heads, len_q, d_k]
         K: [batch_size, n_heads, len_k, d_k]
         V: [batch_size, n_heads, len_v(=len_k), d_v]
         attn_mask: [batch_size, n_heads, seq_len, seq_len]
-        '''
+        """
         # Self-Attention的经典公式
         # matmul函数用于矩阵的点积
         scores = torch.matmul(Q, K.transpose(-1, -2)) / np.sqrt(d_k)  # scores : [batch_size, n_heads, len_q, len_k]
@@ -318,26 +319,30 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.99)
 
-    for epoch in range(20):
+    print("Training...")
+    loss = 0.0
+    for epoch in range(1, 20):
         for enc_inputs, dec_inputs, dec_outputs in loader:
-            '''
+            """
             enc_inputs: [batch_size, src_len]
             dec_inputs: [batch_size, tgt_len]
             dec_outputs: [batch_size, tgt_len]
-            '''
+            """
+            # 这里一模一样的变量为什么要再复制一次?
             enc_inputs, dec_inputs, dec_outputs = enc_inputs, dec_inputs, dec_outputs
             # outputs: [batch_size * tgt_len, tgt_vocab_size]
             outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(enc_inputs, dec_inputs)
             loss = criterion(outputs, dec_outputs.view(-1))
-            if epoch % 10 == 0 or True:
-                print('Epoch:', '%04d' % (epoch), 'loss =', '{:.6f}'.format(loss))
+            if epoch % 10 == 0 or False:
+                print('Epoch:', '%04d' % (epoch), 'loss =', '{:.3f}'.format(loss))
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+    print("Training finished at loss = {0}\n".format(round(float(loss), 3)))
 
 
-    def greedy_decoder(model, enc_input, start_symbol):
+    def greedy_decoder(model, enc_input, start_symbol: int):
         """
         为了简单起见,当K=1时,贪婪解码器是波束搜索。这对于推理是必要的,因为我们不知道
         目标序列输入。因此,我们尝试逐字生成目标输入，然后将其输入到转换器中。
@@ -351,6 +356,7 @@ if __name__ == "__main__":
         terminal = False
         next_symbol = start_symbol
         cnt = 0
+        # 这里设置一个cnt计数单纯是避免在少量训练时输出无法停止
         while not terminal and cnt <= tgt_len:
             cnt += 1
             dec_input = torch.cat([dec_input.detach(), torch.tensor([[next_symbol]], dtype=enc_input.dtype)], -1)
@@ -373,5 +379,5 @@ if __name__ == "__main__":
         predict, _, _, _ = model(enc_inputs[i].view(1, -1), greedy_dec_input)
         predict = predict.data.max(1, keepdim=True)[1]
         # print(enc_inputs[i], '->', [idx2word[n.item()] for n in predict.squeeze()])
-        print('', [idx2word[n.item()] for n in enc_inputs[i].squeeze()]
+        print('', [idx2src[n.item()] for n in enc_inputs[i].squeeze()]
               , '->\n', [idx2word[n.item()] for n in predict.squeeze()])
