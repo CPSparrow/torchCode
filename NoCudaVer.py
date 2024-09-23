@@ -337,7 +337,19 @@ if __name__ == "__main__":
 
     print("Training...")
     loss = 0.0
-    for epoch in range(1, 10):
+    loss_store = []
+
+
+    def draw_loss(data):
+        import matplotlib.pyplot as plt
+        x = [i for i in range(1, len(data) + 1)]
+        plt.plot(x, data)
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        plt.show()
+
+
+    for epoch in range(1, 21):
         for enc_inputs, dec_inputs, dec_outputs in loader:
             """
             enc_inputs: [batch_size, src_len]
@@ -355,7 +367,9 @@ if __name__ == "__main__":
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            loss_store.append(float(loss))
     print("Training finished at loss = {0}\n".format(round(float(loss), 3)))
+    draw_loss(loss_store)
 
 
     def greedy_decoder(model, enc_input, start_symbol: int):
