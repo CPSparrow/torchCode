@@ -1,3 +1,36 @@
+# 使用方法
+
+1. 开始使用这个项目时，先尝试运行放在```./nlp-tutorial/5-1.Transformer```文件夹里的文件(.py或者notebook都可以)
+   ，跑出来的数据无所谓，可以把batch改小一点，重点在于确认pytorch和cuda环境安装正确。这里面借鉴的资料来源如下：
+    - 目录中的```main.py```来自B站up [deep_thoughts](https://space.bilibili.com/373596439)
+      关于 transformer 的 [Encoder](https://www.bilibili.com/video/BV1cP4y1V7GF)
+      和 [Decoder](https://www.bilibili.com/video/BV1Qg411N74v)的视频。刚开始学习 transformer
+      的同志们可以先简单了解该模型的结构之后跟着视频把这些重难点了解一下。有了切身的体会之后就可以更好地理解模型的原理了。
+    - 目录```./nlp-tutorial```来自GitHub上的同名库[nlp-tutorial](https://github.com/wmathor/nlp-tutorial)
+      。这里面有很多经典模型和算法的代码，应该都是可以开箱即用的。
+2. ```my_transformer```是现在主要进行的工作。我想参考着项目里的代码手敲一遍transformer进行英文到中文的翻译（是的，语料库的文本就是Attention
+   is All You Need的原文以及稍微修改过的机翻文本）
+3. ```NoCudaVer.py```最开始和nlp-tutorial的原文的区别只是删去了所有的cuda相关的代码，这样没插电时也方便查看和调试。现在它上面也有我自己的注释和一些修改。
+4. ```test.ipynb```正如其名，用于做一些简单的实验和展示
+5. ```READE.md```里面包含我自用的笔记和todo-list，里面附带的阅读资料也是我在查阅时记录的。
+
+### 目录（不包含nlp-tutorial,不一定及时更新）
+
+```
+├── assets
+│ └── img.png
+├── corpus
+│ ├── train
+│ │ ├── CN.txt
+│ │ └── EN.txt
+│ └── valid
+├── main.py
+├── my_transformer.ipynb
+├── NoCudaVer.py
+├── README.md
+└── test.ipynb
+```
+
 # 知识点
 
 - [x] 查看```nn.model```的文档
@@ -8,8 +41,8 @@
         - SGD、Momentum、RMSProp、Adam的[介绍](https://zhuanlan.zhihu.com/p/78622301)
 - [x] ```dataloader```的参数的含义
     - 对应的资料已经加到书签栏里了
-    - [Dataset](https://zhuanlan.zhihu.com/p/105507334)
-    - [DataLoader](https://zhuanlan.zhihu.com/p/105578087)
+    - 来自知乎的文章：[Dataset](https://zhuanlan.zhihu.com/p/105507334)
+      和 [DataLoader](https://zhuanlan.zhihu.com/p/105578087)
     - [官方文档](https://pytorch.org/tutorials/beginner/basics/data_tutorial.html)
 - [x] 查看```make_data()```的返回值的内容
 - [x] ```LongTensor```的作用
