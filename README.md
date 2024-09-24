@@ -76,4 +76,4 @@
     - 代码在提交里可以找到（搜索关键词```list```就好）
     - 系统信息：12th Gen Intel Core i7-12700H， Ubuntu 22.04, JupyterNotebook
 - 偶然发现的事情：```torch.log```可能不等于```math.log```
-    - 如图所示：![img.png](assets/log计算实验.png)
+    - 如图所示：![torch.log和math.log的比较](assets/log计算实验.png)

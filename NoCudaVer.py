@@ -350,7 +350,9 @@ if __name__ == "__main__":
 
 
     for epoch in range(1, 11):
+        cnt, flag = 0, True
         for enc_inputs, dec_inputs, dec_outputs in loader:
+            cnt += 1
             """
             enc_inputs: [batch_size, src_len]
             dec_inputs: [batch_size, tgt_len]
@@ -368,6 +370,9 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
             loss_store.append(float(loss))
+    if flag:
+        print(cnt)
+        flag = False
     print("Training finished at loss = {0}\n".format(round(float(loss), 3)))
     draw_loss(loss_store)
 
