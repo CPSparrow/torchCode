@@ -63,9 +63,15 @@
 - [ ] ```batch_size```应当作为一个变量重构。(问题最初来自于```DataLoader```)
 - [ ] ```register_buffer()```能否删除->cuda版也可以试一试
 - [ ] ```Linear```设置为```bias=False```对训练会有什么影响？似乎可以记录loss来进行实验
+- [ ] 惊讶地发现```NoCudaVer.py```里面根本没有恰当地实现dropout，residual也存疑。
 
 # 笔记
 
 - 这里有一个实现的技巧在于：src和tgt vocab都把padding对应了0,从而与其中对应的代码结合。而与之相对应的，开始标记S与中止标记E的索引则无关紧要。
+- 在阅读代码时在考虑对于list的```append```和```extend```
+  的区别。所以我做了一个测速。如图所示：![给list添加元素的实验](assets/append-extend实验.png)
+    - **说 明：** 该图片的横坐标代表往一个空列表添加的元素 [1, 2, 3, 4] 的个数，纵坐标代表完成添加的时间（单位：秒）。红色对应
+      ```extend``` 方法，橙色对应```append```方法。这说明对于很大的数据（这里是3e6左右开始）两者的表现会有比较大的差距（但实际都很快，实际应用中基本没有影响）。
+    - 系统信息：12th Gen Intel Core i7-12700H， Ubuntu 22.04, JupyterNotebook
 - 偶然发现的事情：```torch.log```可能不等于```math.log```
-    - 如图所示：![img.png](assets/img.png)
+    - 如图所示：![img.png](assets/log计算实验.png)
