@@ -17,6 +17,7 @@ import jieba
 
 
 batch_size = 2
+device = torch.device("cuda" if torch.cuda.is_available() and True else "cpu")
 en_name = './corpus/train/EN.txt'
 cn_name = './corpus/train/CN.txt'
 
@@ -98,8 +99,8 @@ tgt_tokens = file2tokens(cn_name)
 tgt2idx, idx2tgt, tgt_vocab_size = tokens2vocab(tgt_tokens, 'tgt')
 
 data_list = make_data(src_tokens, tgt_tokens, src2idx, tgt2idx)
-
 src_len, tgt_len = data_list[0].shape[1], data_list[1].shape[1]
+
 # 设置 Transformer 的一些参数
 d_model = 512  # Embedding Size 嵌入层
 d_ff = 2048  # FeedForward dimension 残差神经网络层
@@ -221,7 +222,7 @@ class MultiHeadAttention(nn.Module):
         context = context.transpose(1, 2).reshape(batch_size, -1,
                                                   n_heads * d_v)  # context: [batch_size, len_q, n_heads * d_v]
         output = self.fc(context)  # [batch_size, len_q, d_model]
-        return nn.LayerNorm(d_model)(output + residual), attn
+        return nn.LayerNorm(d_model).to(device)(output + residual), attn
 
 
 class PoswiseFeedForwardNet(nn.Module):
@@ -239,7 +240,7 @@ class PoswiseFeedForwardNet(nn.Module):
         '''
         residual = inputs
         output = self.fc(inputs)
-        return nn.LayerNorm(d_model)(output + residual)  # [batch_size, seq_len, d_model]
+        return nn.LayerNorm(d_model).to(device)(output + residual)  # [batch_size, seq_len, d_model]
 
 
 class EncoderLayer(nn.Module):
@@ -318,11 +319,13 @@ class Decoder(nn.Module):
         enc_outputs: [batsh_size, src_len, d_model]
         '''
         dec_outputs = self.tgt_emb(dec_inputs)  # [batch_size, tgt_len, d_model]
-        dec_outputs = self.pos_emb(dec_outputs.transpose(0, 1)).transpose(0, 1)  # [batch_size, tgt_len, d_model]
-        dec_self_attn_pad_mask = get_attn_pad_mask(dec_inputs, dec_inputs)  # [batch_size, tgt_len, tgt_len]
-        dec_self_attn_subsequence_mask = get_attn_subsequence_mask(dec_inputs)  # [batch_size, tgt_len, tgt_len]
+        dec_outputs = self.pos_emb(dec_outputs.transpose(0, 1)).transpose(0, 1).to(
+            device)  # [batch_size, tgt_len, d_model]
+        dec_self_attn_pad_mask = get_attn_pad_mask(dec_inputs, dec_inputs).to(device)  # [batch_size, tgt_len, tgt_len]
+        dec_self_attn_subsequence_mask = get_attn_subsequence_mask(dec_inputs).to(
+            device)  # [batch_size, tgt_len, tgt_len]
         dec_self_attn_mask = torch.gt((dec_self_attn_pad_mask + dec_self_attn_subsequence_mask),
-                                      0)  # [batch_size, tgt_len, tgt_len]
+                                      0).to(device)  # [batch_size, tgt_len, tgt_len]
 
         dec_enc_attn_mask = get_attn_pad_mask(dec_inputs, enc_inputs)  # [batc_size, tgt_len, src_len]
 
@@ -339,9 +342,9 @@ class Decoder(nn.Module):
 class Transformer(nn.Module):
     def __init__(self):
         super(Transformer, self).__init__()
-        self.encoder = Encoder()
-        self.decoder = Decoder()
-        self.projection = nn.Linear(d_model, tgt_vocab_size, bias=False)
+        self.encoder = Encoder().to(device)
+        self.decoder = Decoder().to(device)
+        self.projection = nn.Linear(d_model, tgt_vocab_size, bias=False).to(device)
 
     def forward(self, enc_inputs, dec_inputs):
         '''
@@ -360,7 +363,7 @@ class Transformer(nn.Module):
 
 
 if __name__ == "__main__":
-    model = Transformer()
+    model = Transformer().to(device)
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.99)
 
@@ -372,13 +375,14 @@ if __name__ == "__main__":
     def draw_loss(data):
         import matplotlib.pyplot as plt
         x = [i for i in range(1, len(data) + 1)]
+        plt.figure(dpi=160)
         plt.plot(x, data)
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.show()
 
 
-    for epoch in range(1, 70):
+    for epoch in range(1, 100) if device == 'cuda' else range(1, 10):
         for enc_inputs, dec_inputs, dec_outputs in loader:
             """
             enc_inputs: [batch_size, src_len]
@@ -386,7 +390,7 @@ if __name__ == "__main__":
             dec_outputs: [batch_size, tgt_len]
             """
             # 这里一模一样的变量为什么要再复制一次?我也不知道
-            enc_inputs, dec_inputs, dec_outputs = enc_inputs, dec_inputs, dec_outputs
+            enc_inputs, dec_inputs, dec_outputs = enc_inputs.to(device), dec_inputs.to(device), dec_outputs.to(device)
             outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(enc_inputs, dec_inputs)
             loss = criterion(outputs, dec_outputs.view(-1))
             optimizer.zero_grad()
@@ -414,9 +418,10 @@ if __name__ == "__main__":
         next_symbol = start_symbol
         cnt = 0
         # 这里设置一个cnt计数单纯是避免在少量训练时输出无法停止
-        while not terminal and cnt <= 20:
+        while not terminal and (cnt <= tgt_len):
             cnt += 1
-            dec_input = torch.cat([dec_input.detach(), torch.tensor([[next_symbol]], dtype=enc_input.dtype)], -1)
+            dec_input = torch.cat([dec_input.detach(), torch.tensor([[next_symbol]], dtype=enc_input.dtype).to(device)],
+                                  -1)
             dec_outputs, _, _ = model.decoder(dec_input, enc_input, enc_outputs)
             projected = model.projection(dec_outputs)
             prob = projected.squeeze(0).max(dim=-1, keepdim=False)[1]
@@ -429,12 +434,15 @@ if __name__ == "__main__":
 
     # 测试
     enc_inputs, _, _ = next(iter(loader))
-    enc_inputs = enc_inputs
+    enc_inputs = enc_inputs.to(device)
     for i in range(len(enc_inputs)):
         greedy_dec_input = greedy_decoder(model, enc_inputs[i].view(1, -1), start_symbol=tgt2idx["S"])
         predict, _, _, _ = model(enc_inputs[i].view(1, -1), greedy_dec_input)
         predict = predict.data.max(1, keepdim=True)[1]
         # print(enc_inputs[i], '->', [idx2word[n.item()] for n in predict.squeeze()])
-        print(''.join([idx2src[n.item()] for n in enc_inputs[i].squeeze()])
-              , '->\n', ''.join([idx2tgt[n.item()] for n in predict.squeeze()]))
+        print(repr(
+            ''.join([idx2src[n.item()] for n in enc_inputs[i].squeeze()]))
+            , '->\n',
+            repr(
+                ''.join([idx2tgt[n.item()] for n in predict.squeeze()])))
         print('\n')
