@@ -13,6 +13,8 @@
 3. ```NoCudaVer.py```最开始和nlp-tutorial的原文的区别只是删去了所有的cuda相关的代码，这样没插电时也方便查看和调试。现在它上面也有我自己的注释和一些修改。
 4. ```test.ipynb```正如其名，用于做一些简单的实验和展示
 5. ```READE.md```里面包含我自用的笔记和todo-list，里面附带的阅读资料也是我在查阅时记录的。
+6. 注意：```NoCudaVer.py```的参考版本**有很多的问题**。包括但不限于 residual 写的很奇怪，dropout 只在 position
+   embedding 做过,没有 label smoothing 和 warm up 以及没有对 embedding 做 sqrt( d_model ) 的乘法。
 
 ### 目录（不包含nlp-tutorial,不一定及时更新）
 
