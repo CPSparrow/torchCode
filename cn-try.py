@@ -219,10 +219,10 @@ class MultiHeadAttention(nn.Module):
 
         # context: [batch_size, n_heads, len_q, d_v], attn: [batch_size, n_heads, len_q, len_k]
         context, attn = ScaledDotProductAttention()(Q, K, V, attn_mask)
-        context = context.transpose(1, 2).reshape(batch_size, -1,
-                                                  n_heads * d_v)  # context: [batch_size, len_q, n_heads * d_v]
+        # context: [batch_size, len_q, n_heads * d_v]
+        context = context.transpose(1, 2).reshape(batch_size, -1, n_heads * d_v)
         output = self.fc(context)  # [batch_size, len_q, d_model]
-        return nn.LayerNorm(d_model).to(device)(output + residual), attn
+        return nn.LayerNorm(d_model).to(device)(output) + residual.to(device), attn
 
 
 class PoswiseFeedForwardNet(nn.Module):
@@ -240,7 +240,7 @@ class PoswiseFeedForwardNet(nn.Module):
         '''
         residual = inputs
         output = self.fc(inputs)
-        return nn.LayerNorm(d_model).to(device)(output + residual)  # [batch_size, seq_len, d_model]
+        return nn.LayerNorm(d_model).to(device)(output) + residual.to(device)  # [batch_size, seq_len, d_model]
 
 
 class EncoderLayer(nn.Module):
@@ -365,7 +365,7 @@ class Transformer(nn.Module):
 if __name__ == "__main__":
     model = Transformer().to(device)
     criterion = nn.CrossEntropyLoss(ignore_index=0)
-    optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.99)
+    optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.98)
 
     print("Training...")
     loss = 0.0
@@ -382,7 +382,8 @@ if __name__ == "__main__":
         plt.show()
 
 
-    for epoch in range(1, 100) if device == 'cuda' else range(1, 10):
+    epoches = 40
+    for epoch in range(1, epoches) if device == torch.device('cuda') else range(1, 10):
         for enc_inputs, dec_inputs, dec_outputs in loader:
             """
             enc_inputs: [batch_size, src_len]
@@ -399,7 +400,8 @@ if __name__ == "__main__":
             loss_store.append(float(loss))
         if epoch % 10 == 0 or False:
             print('Epoch:', '%04d' % (epoch), 'loss =', '{:.3f}'.format(loss))
-    print("Training finished at loss = {0}\n".format(round(float(loss), 3)))
+    print("Training finished at loss = {0} after {1} epoches\n".format(round(float(loss), 3), epoches))
+    # print(device)
     draw_loss(loss_store)
 
 
@@ -433,16 +435,20 @@ if __name__ == "__main__":
 
 
     # 测试
-    enc_inputs, _, _ = next(iter(loader))
-    enc_inputs = enc_inputs.to(device)
-    for i in range(len(enc_inputs)):
-        greedy_dec_input = greedy_decoder(model, enc_inputs[i].view(1, -1), start_symbol=tgt2idx["S"])
-        predict, _, _, _ = model(enc_inputs[i].view(1, -1), greedy_dec_input)
-        predict = predict.data.max(1, keepdim=True)[1]
-        # print(enc_inputs[i], '->', [idx2word[n.item()] for n in predict.squeeze()])
-        print(repr(
-            ''.join([idx2src[n.item()] for n in enc_inputs[i].squeeze()]))
-            , '->\n',
-            repr(
-                ''.join([idx2tgt[n.item()] for n in predict.squeeze()])))
-        print('\n')
+    while True:
+        enc_inputs, _, _ = next(iter(loader))
+        enc_inputs = enc_inputs.to(device)
+        for i in range(len(enc_inputs)):
+            greedy_dec_input = greedy_decoder(model, enc_inputs[i].view(1, -1), start_symbol=tgt2idx["S"])
+            predict, _, _, _ = model(enc_inputs[i].view(1, -1), greedy_dec_input)
+            predict = predict.data.max(1, keepdim=True)[1]
+            # print(enc_inputs[i], '->', [idx2word[n.item()] for n in predict.squeeze()])
+            print(repr(
+                ''.join([idx2src[n.item()] for n in enc_inputs[i].squeeze()]))
+                , '->\n',
+                repr(
+                    ''.join([idx2tgt[n.item()] for n in predict.squeeze()])))
+            print('\n')
+        q = input("input q to quit:")
+        if q == 'q':
+            break
