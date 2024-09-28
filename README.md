@@ -8,7 +8,7 @@
       的同志们可以先简单了解该模型的结构之后跟着视频把这些重难点了解一下。有了切身的体会之后就可以更好地理解模型的原理了。
     - 目录```./nlp-tutorial```来自GitHub上的同名库[nlp-tutorial](https://github.com/wmathor/nlp-tutorial)
       。这里面有很多经典模型和算法的代码，应该都是可以开箱即用的。
-2. ```my_transformer```是现在主要进行的工作。我想参考着项目里的代码手敲一遍transformer进行英文到中文的翻译（是的，语料库的文本就是Attention
+2. ```my_transformer```~~是现在主要进行的工作。~~ 我想参考着项目里的代码手敲一遍transformer进行英文到中文的翻译（是的，语料库的文本就是Attention
    is All You Need的原文以及稍微修改过的机翻文本）
 3. ```NoCudaVer.py```最开始和nlp-tutorial的原文的区别只是删去了所有的cuda相关的代码，这样没插电时也方便查看和调试。现在它上面也有我自己的注释和一些修改。
 4. ```test.ipynb```正如其名，用于做一些简单的实验和展示
@@ -42,7 +42,7 @@
       时，算法在更新时会考虑之前的梯度，有助于加速收敛。
         - SGD、Momentum、RMSProp、Adam的[介绍](https://zhuanlan.zhihu.com/p/78622301)
 - [x] ```dataloader```的参数的含义
-    - 对应的资料已经加到书签栏里了
+    - ~~对应的资料已经加到书签栏里了~~
     - 来自知乎的文章：[Dataset](https://zhuanlan.zhihu.com/p/105507334)
       和 [DataLoader](https://zhuanlan.zhihu.com/p/105578087)
     - [官方文档](https://pytorch.org/tutorials/beginner/basics/data_tutorial.html)
