@@ -23,24 +23,40 @@ class Dictionary(object):
 class Corpus(object):
 	def __init__(self, path):
 		self.dictionary = Dictionary()
-		self.train = self.tokenize(os.path.join(path, 'train.txt'))
-		self.valid = self.tokenize(os.path.join(path, 'valid.txt'))
-		self.test = self.tokenize(os.path.join(path, 'test.txt'))
+		self.train, self.valid, self.test = self.tokenize(os.path.join(path, 'raw.txt'))
 	
-	def tokenize(self, path):
+	def tokenize(self, path, len_seq=80):
 		r"""
 		Tokenizes a text file.
 		"""
 		assert os.path.exists(path)
-		# 这里的代码似乎可以简化，遂修改（还没有验证正确性）
-		with open(path, 'r', encoding="utf8") as f:
-			idss = []
-			for line in f:
-				ids = []
-				words = line.split() + ['<eos>']
-				for word in words:
-					self.dictionary.add_word(word)
-					ids.append(self.dictionary.word2idx[word])
-				idss.append(torch.tensor(ids).type(torch.int64))
-			ids = torch.cat(idss)
-		return ids
+		batched_src = []
+		with open(path, 'r', encoding="utf8") as src_file:
+			store = []
+			for line in src_file:
+				store.extend([i for i in cut(line, cut_all=False) if i != '\n'])
+				while len(store) > len_seq:
+					batched_src.append(store[0:len_seq] + ['<eos>'])
+					store = store[len_seq:]
+		
+		train, valid, test = [], [], []
+		for interval, batch in enumerate(batched_src):
+			idx_list = []
+			for word in batch:
+				self.dictionary.add_word(word)
+				idx_list.append(self.dictionary.word2idx[word])
+			tensor = torch.tensor(idx_list, dtype=torch.int64)
+			if interval % 10 < 7:
+				train.append(tensor)
+			elif interval % 10 >= 9:
+				test.append(tensor)
+			else:
+				valid.append(tensor)
+		return torch.cat(train), torch.cat(valid), torch.cat(test)
+
+
+if __name__ == "__main__":
+	corpus = Corpus("./Data/novel/")
+	print(len(corpus.train) / 80)
+	print(len(corpus.test))
+	print(len(corpus.valid))

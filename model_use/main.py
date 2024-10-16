@@ -11,33 +11,33 @@ import data
 import model
 
 parser = argparse.ArgumentParser(description='PyTorch Wikitext-2 RNN/LSTM/GRU/Transformer Language Model')
-parser.add_argument('--data', type=str, default='./Data/wikitext-2',
+parser.add_argument('--data', type=str, default='./Data/novel',
 					help='location of the data corpus')
 parser.add_argument('--model', type=str, default='Transformer',
 					help='type of network (RNN_TANH, RNN_RELU, LSTM, GRU, Transformer)')
-parser.add_argument('--emsize', type=int, default=200,
+parser.add_argument('--emsize', type=int, default=512,
 					help='size of word embeddings')
-parser.add_argument('--nhid', type=int, default=200,
+parser.add_argument('--nhid', type=int, default=2048,
 					help='number of hidden units per layer')
-parser.add_argument('--nlayers', type=int, default=2,
+parser.add_argument('--nlayers', type=int, default=6,
 					help='number of layers')
-parser.add_argument('--lr', type=float, default=5,
+parser.add_argument('--lr', type=float, default=3,
 					help='initial learning rate')
-parser.add_argument('--clip', type=float, default=0.25,
+parser.add_argument('--clip', type=float, default=0.15,
 					help='gradient clipping')
-parser.add_argument('--epochs', type=int, default=40,
+parser.add_argument('--epochs', type=int, default=32,
 					help='upper epoch limit')
-parser.add_argument('--batch_size', type=int, default=20, metavar='N',
+parser.add_argument('--batch_size', type=int, default=32, metavar='N',
 					help='batch size')
-parser.add_argument('--bptt', type=int, default=35,
+parser.add_argument('--bptt', type=int, default=64,
 					help='sequence length')
-parser.add_argument('--dropout', type=float, default=0.2,
+parser.add_argument('--dropout', type=float, default=0.1,
 					help='dropout applied to layers (0 = no dropout)')
 parser.add_argument('--tied', action='store_true',
 					help='tie the word embedding and softmax weights')
 parser.add_argument('--seed', type=int, default=1111,
 					help='random seed')
-parser.add_argument('--cuda', action='store_true', default=False,
+parser.add_argument('--cuda', action='store_true', default=True,
 					help='use CUDA')
 parser.add_argument('--mps', action='store_true', default=False,
 					help='enables macOS GPU training')
@@ -47,7 +47,7 @@ parser.add_argument('--save', type=str, default='model.pt',
 					help='path to save the final model')
 parser.add_argument('--onnx-export', type=str, default='',
 					help='path to export the final model in onnx format')
-parser.add_argument('--nhead', type=int, default=2,
+parser.add_argument('--nhead', type=int, default=8,
 					help='the number of heads in the encoder/decoder of the transformer model')
 parser.add_argument('--dry-run', action='store_true',
 					help='verify the code and the model')
@@ -173,10 +173,10 @@ def train():
 	# Turn on training mode which enables dropout.
 	model.train()
 	total_loss = 0.
-	start_time = time.time()
 	ntokens = len(corpus.dictionary)
 	if args.model != 'Transformer':
 		hidden = model.init_hidden(args.batch_size)
+	start_time = time.time()
 	for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
 		data, targets = get_batch(train_data, i)
 		# Starting each batch, we detach the hidden state from how it was previously produced.
@@ -239,11 +239,11 @@ try:
 			with open(args.save, 'wb') as f:
 				torch.save(model, f)
 			best_val_loss = val_loss
-		else:
+		elif lr >= 0.001:
 			# Anneal the learning rate if no improvement has been seen in the validation dataset.
-			lr /= 4.0
+			lr /= 1.5
 			print("Warning: for no improvement,lr was decreased from {:5.3f} to {:5.3f}".format(
-				lr * 4.0, lr
+				lr * 1.3, lr
 			))
 except KeyboardInterrupt:
 	print('-' * 89)
