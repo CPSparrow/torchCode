@@ -10,6 +10,7 @@ import torch.onnx
 
 import data
 import model
+from torch import autocast
 
 
 def batchify(raw_data, bsz):
@@ -137,7 +138,8 @@ if __name__ == "__main__":
 	try:
 		for epoch in range(1, cfg["epoch"] + 1):
 			epoch_start_time = time.time()
-			train()
+			with autocast("cuda"):
+				train()
 			val_loss = evaluate(val_data)
 			print('-' * 89)
 			print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '

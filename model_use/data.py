@@ -1,3 +1,4 @@
+import json
 import os
 import torch
 from io import open
@@ -57,7 +58,10 @@ class Corpus(object):
 
 
 if __name__ == "__main__":
-	corpus = Corpus("./Data/novel/", 256)
-	print(len(corpus.train) / 256)
+	with open("./utils/cfg.json") as cfg_file:
+		cfg = json.load(cfg_file)
+	corpus = Corpus(cfg["data"], cfg["len_seq"])
+	print(len(corpus.train))
 	print(len(corpus.test))
 	print(len(corpus.valid))
+	print(round(len(corpus.train) / cfg["batch_size"], 2))
