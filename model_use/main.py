@@ -15,11 +15,11 @@ parser.add_argument('--data', type=str, default='./Data/novel',
 					help='location of the data corpus')
 parser.add_argument('--model', type=str, default='Transformer',
 					help='type of network (RNN_TANH, RNN_RELU, LSTM, GRU, Transformer)')
-parser.add_argument('--emsize', type=int, default=512,
+parser.add_argument('--emsize', type=int, default=256,
 					help='size of word embeddings')
-parser.add_argument('--nhid', type=int, default=2048,
+parser.add_argument('--nhid', type=int, default=1024,
 					help='number of hidden units per layer')
-parser.add_argument('--nlayers', type=int, default=6,
+parser.add_argument('--nlayers', type=int, default=4,
 					help='number of layers')
 parser.add_argument('--lr', type=float, default=3,
 					help='initial learning rate')
@@ -29,7 +29,7 @@ parser.add_argument('--epochs', type=int, default=32,
 					help='upper epoch limit')
 parser.add_argument('--batch_size', type=int, default=32, metavar='N',
 					help='batch size')
-parser.add_argument('--bptt', type=int, default=64,
+parser.add_argument('--bptt', type=int, default=256,
 					help='sequence length')
 parser.add_argument('--dropout', type=float, default=0.1,
 					help='dropout applied to layers (0 = no dropout)')
@@ -74,7 +74,7 @@ else:
 # Load data
 ###############################################################################
 
-corpus = data.Corpus(args.data)
+corpus = data.Corpus(args.data, args.bptt)
 
 
 # Starting from sequential data, batchify arranges the dataset into columns.

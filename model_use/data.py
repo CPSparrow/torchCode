@@ -21,9 +21,10 @@ class Dictionary(object):
 
 
 class Corpus(object):
-	def __init__(self, path):
+	def __init__(self, path, len_seq):
 		self.dictionary = Dictionary()
-		self.train, self.valid, self.test = self.tokenize(os.path.join(path, 'raw.txt'))
+		self.train, self.valid, self.test = (
+			self.tokenize(os.path.join(path, 'raw.txt'), len_seq))
 	
 	def tokenize(self, path, len_seq=80):
 		r"""
@@ -36,8 +37,8 @@ class Corpus(object):
 			for line in src_file:
 				store.extend([i for i in cut(line, cut_all=False) if i != '\n'])
 				while len(store) > len_seq:
-					batched_src.append(store[0:len_seq] + ['<eos>'])
-					store = store[len_seq:]
+					batched_src.append(store[0:len_seq - 1] + ['<eos>'])
+					store = store[len_seq - 1:]
 		
 		train, valid, test = [], [], []
 		for interval, batch in enumerate(batched_src):
