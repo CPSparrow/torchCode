@@ -57,7 +57,7 @@ class Corpus(object):
 
 
 if __name__ == "__main__":
-	corpus = Corpus("./Data/novel/")
-	print(len(corpus.train) / 80)
+	corpus = Corpus("./Data/novel/", 256)
+	print(len(corpus.train) / 256)
 	print(len(corpus.test))
 	print(len(corpus.valid))
