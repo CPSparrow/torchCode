@@ -16,13 +16,21 @@ def dataset_to_text(dataset, output_filename="data.txt"):
 	useful for using the texts to train the tokenizer
 	(as the tokenizer accepts files)"""
 	with open(output_filename, "w") as f:
+		cnt = 0
 		for t in dataset["text"]:
-			print(t, file=f)
+			f.write(t)
+			cnt += 1
+			if cnt % 1000 == 1:
+				print(f"flush {cnt // 100}")
+				f.flush()
 
 
+print("try to write")
+print("type = ", type(dataset_split))
 # save the training set to train.txt
 dataset_to_text(dataset_split["train"], "train.txt")
 # save the testing set to test.txt
+print("write test")
 dataset_to_text(dataset_split["test"], "test.txt")
 #
 # special_tokens = [
